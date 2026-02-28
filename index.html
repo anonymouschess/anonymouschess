@@ -44,62 +44,59 @@ body {
 /* ===== TITLE ===== */
 .header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.top-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .title {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 300;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   opacity: 0;
   animation: fadeUp 1s ease forwards;
 }
 
-.tagline {
+.score-inline {
+  display: flex;
+  gap: 1.2rem;
   font-size: 0.7rem;
-  letter-spacing: 0.3em;
-  color: var(--dim);
-  text-transform: uppercase;
-  margin-top: 0.3rem;
+  letter-spacing: 0.1em;
   opacity: 0;
   animation: fadeUp 1s ease 0.2s forwards;
 }
 
-/* ===== SCORE BAR ===== */
-.score-bar {
-  display: flex;
-  gap: 2.5rem;
-  margin-bottom: 1.5rem;
-  opacity: 0;
-  animation: fadeUp 1s ease 0.4s forwards;
-}
+.score-inline .s-num { font-weight: 700; }
+.score-inline .s-dim { color: var(--dim); }
 
-.score-item { text-align: center; }
-
-.score-num {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 700;
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 0.6rem;
+.tagline {
+  font-size: 0.65rem;
   letter-spacing: 0.25em;
   color: var(--dim);
   text-transform: uppercase;
-  margin-top: 0.25rem;
+  margin-top: 0.3rem;
+  opacity: 0;
+  animation: fadeUp 1s ease 0.3s forwards;
 }
 
 /* ===== BOARD AREA ===== */
 .board-area {
   width: 100%;
-  max-width: 520px;
-  margin-bottom: 1.5rem;
+  max-width: 400px;
+  margin-bottom: 1rem;
   opacity: 0;
-  animation: fadeUp 1s ease 0.6s forwards;
+  animation: fadeUp 1s ease 0.5s forwards;
 }
 
 .player-bar {
@@ -171,7 +168,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.8rem, 6vw, 3rem);
+  font-size: clamp(1.4rem, 4.5vw, 2.4rem);
   user-select: none;
 }
 
@@ -360,23 +357,15 @@ body {
 <div class="main">
 
   <div class="header">
-    <h1 class="title">Anonymous</h1>
+    <div class="top-row">
+      <h1 class="title">Anonymous</h1>
+      <div class="score-inline">
+        <span><span class="s-num">99</span> Wins</span>
+        <span class="s-dim"><span class="s-num">0</span> Losses</span>
+        <span class="s-dim"><span class="s-num">1</span> Draw</span>
+      </div>
+    </div>
     <p class="tagline">vs Stockfish. 100 games. All checkmates.</p>
-  </div>
-
-  <div class="score-bar">
-    <div class="score-item">
-      <div class="score-num">99</div>
-      <div class="score-label">Wins</div>
-    </div>
-    <div class="score-item">
-      <div class="score-num" style="color:var(--dim)">0</div>
-      <div class="score-label">Losses</div>
-    </div>
-    <div class="score-item">
-      <div class="score-num" style="color:var(--dim)">1</div>
-      <div class="score-label">Draws</div>
-    </div>
   </div>
 
   <!-- BOARD -->
@@ -415,7 +404,6 @@ body {
   <!-- GAME GRID -->
   <div class="grid-section">
     <div class="grid-title">The 100 Games</div>
-    <div class="grid-sub">Bright cells are sub-20 move checkmates</div>
     <div class="game-grid" id="gameGrid"></div>
   </div>
 
@@ -423,8 +411,9 @@ body {
 
 <footer class="footer">
   <div class="footer-text">
-    Not a neural network. Not a search engine. Something new.<br>
-    Every game above is real. Every move is recorded.
+    The Anonymous engine is covered by 32 provisional patents<br>
+    and was custom built by its creator, who is choosing to remain<br>
+    anonymous as he builds his companies in stealth mode.
   </div>
   <div class="footer-contact">anonymouschess@proton.me</div>
 </footer>
@@ -555,7 +544,7 @@ function buildGrid(){
     const c=document.createElement('div');
     c.className='gc'+(gm.termination==='DRAW'?' draw':'');
     const fast=gm.moves<=20&&gm.termination!=='DRAW';
-    c.innerHTML=`<div class="gc-r ${fast?'gc-fast':''}">${gm.round}</div><div class="gc-m">${gm.moves} mv</div>`;
+    c.innerHTML=`<div class="gc-r ${fast?'gc-fast':''}">${gm.round}</div><div class="gc-m">${gm.moves} moves</div>`;
     c.onclick=()=>loadGame(i);c.id='c'+i;g.appendChild(c);
   });
 }
