@@ -14,8 +14,8 @@
   --fg: #e8e8e8;
   --dim: #555;
   --accent: #fff;
-  --board-light: #b8b8b8;
-  --board-dark: #3a3a3a;
+  --board-light: #e8e0d8;
+  --board-dark: #1a1a1a;
   --highlight: rgba(255,255,255,0.15);
   --win: #e8e8e8;
   --draw: #555;
@@ -300,7 +300,8 @@ body {
   grid-template-columns: repeat(8, 1fr);
   width: 100%;
   aspect-ratio: 1;
-  border: 1px solid #333;
+  border: 3px solid #d0c8c0;
+  box-shadow: 0 0 30px rgba(255,255,255,0.05), inset 0 0 0 1px rgba(255,255,255,0.1);
 }
 
 .square {
@@ -313,8 +314,22 @@ body {
   position: relative;
 }
 
-.square.light { background: var(--board-light); }
-.square.dark { background: var(--board-dark); }
+.square.light {
+  background: linear-gradient(135deg, #ede6de 0%, #d8d0c8 50%, #e8e0d8 100%);
+}
+.square.dark {
+  background: linear-gradient(135deg, #1a1a1a 0%, #222 50%, #181818 100%);
+}
+
+.square .white-piece {
+  color: #f0ece8;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6), 0 0 1px rgba(0,0,0,0.8);
+}
+.square .black-piece {
+  color: #111;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.15);
+}
+
 .square.last-from, .square.last-to {
   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.4);
 }
@@ -409,6 +424,73 @@ body {
   margin-top: 1rem;
 }
 
+/* CHECKMATE BANNER */
+.checkmate-banner {
+  display: none;
+  text-align: center;
+  padding: 1.2rem;
+  margin-top: 1rem;
+  border: 1px solid #d0c8c0;
+  background: rgba(255,255,255,0.03);
+}
+
+.checkmate-banner.active { display: block; }
+
+.checkmate-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.checkmate-detail {
+  font-size: 0.65rem;
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  margin-top: 0.4rem;
+}
+
+/* PLAYER LABELS */
+.player-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+
+.player-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.player-dot.white-dot {
+  background: #e8e0d8;
+  border: 1px solid #999;
+}
+
+.player-dot.black-dot {
+  background: #111;
+  border: 1px solid #555;
+}
+
+/* GAME NAV */
+.game-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
 /* ANIMATIONS */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -464,6 +546,9 @@ body {
   </div>
   <div class="viewer-body">
     <div class="board-container">
+      <div class="player-bar" id="topPlayer">
+        <div class="player-name"><span class="player-dot black-dot"></span><span id="topPlayerName">Stockfish</span></div>
+      </div>
       <div class="board-labels-top">
         <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
       </div>
@@ -479,6 +564,13 @@ body {
       <div class="board-labels-bottom">
         <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
       </div>
+      <div class="player-bar" id="bottomPlayer">
+        <div class="player-name"><span class="player-dot white-dot"></span><span id="bottomPlayerName">ANONYMOUS</span></div>
+      </div>
+      <div class="checkmate-banner" id="checkmateBanner">
+        <div class="checkmate-text" id="checkmateText"></div>
+        <div class="checkmate-detail" id="checkmateDetail"></div>
+      </div>
     </div>
     <div class="side-panel">
       <div class="controls">
@@ -490,6 +582,10 @@ body {
       </div>
       <div class="game-info" id="gameInfo"></div>
       <div class="move-list" id="moveList"></div>
+      <div class="game-nav">
+        <button class="btn" onclick="prevGame()">&lsaquo; Prev Game</button>
+        <button class="btn" onclick="nextGame()">Next Game &rsaquo;</button>
+      </div>
     </div>
   </div>
 </section>
@@ -769,6 +865,7 @@ const GAMES = [{"round":1,"white":"ANONYMOUS","black":"Stockfish","result":"1/2-
 
 // State
 let currentGame = null;
+let currentGameIdx = -1;
 let positions = [];
 let sanMoves = [];
 let currentPos = 0;
@@ -798,7 +895,16 @@ function loadGame(idx) {
   document.getElementById('cell-' + idx).classList.add('active');
   
   currentGame = GAMES[idx];
+  currentGameIdx = idx;
   sanMoves = parseMoves(currentGame.pgn);
+  
+  // Set player labels
+  document.getElementById('topPlayerName').textContent = currentGame.black;
+  document.getElementById('bottomPlayerName').textContent = currentGame.white;
+  const topDot = document.querySelector('#topPlayer .player-dot');
+  const bottomDot = document.querySelector('#bottomPlayer .player-dot');
+  topDot.className = 'player-dot black-dot';
+  bottomDot.className = 'player-dot white-dot';
   
   // Generate positions
   const chess = new Chess();
@@ -818,10 +924,9 @@ function loadGame(idx) {
   const viewer = document.getElementById('viewer');
   viewer.classList.add('active');
   
-  const whiteIsAnon = currentGame.white === 'ANONYMOUS';
-  document.getElementById('viewerTitle').textContent = 
-    `Game ${currentGame.round}: ${currentGame.white} vs ${currentGame.black}`;
-  document.getElementById('viewerMeta').textContent = currentGame.termination;
+  document.getElementById('viewerTitle').textContent = `Game ${currentGame.round}`;
+  document.getElementById('viewerMeta').textContent = 
+    currentGame.termination + ' \u00B7 ' + currentGame.moves + ' moves';
   
   document.getElementById('gameInfo').innerHTML = 
     `Result: ${currentGame.result}<br>` +
@@ -861,7 +966,12 @@ function renderBoard() {
       sq.className = 'square ' + (isLight ? 'light' : 'dark');
       
       const p = pos[r][f];
-      if (p) sq.textContent = PIECES[p];
+      if (p) {
+        const span = document.createElement('span');
+        span.textContent = PIECES[p];
+        span.className = (p === p.toUpperCase()) ? 'white-piece' : 'black-piece';
+        sq.appendChild(span);
+      }
       
       board.appendChild(sq);
     }
@@ -875,6 +985,24 @@ function renderBoard() {
   // Scroll current move into view
   const cur = document.querySelector('.move.current');
   if (cur) cur.scrollIntoView({ block: 'nearest' });
+  
+  // Checkmate banner
+  const banner = document.getElementById('checkmateBanner');
+  if (currentPos === positions.length - 1 && currentGame.termination.includes('checkmate')) {
+    const lastMove = sanMoves[sanMoves.length - 1];
+    const piece = lastMove[0] >= 'A' && lastMove[0] <= 'Z' ? lastMove[0] : 'PAWN';
+    const pieceNames = { 'K': 'KING', 'Q': 'QUEEN', 'R': 'ROOK', 'B': 'BISHOP', 'N': 'KNIGHT' };
+    const pieceName = pieceNames[piece] || 'PAWN';
+    const moveCount = Math.ceil(sanMoves.length / 2);
+    const whiteIsAnon = currentGame.white === 'ANONYMOUS';
+    const winner = (sanMoves.length % 2 === 1) ? 'White' : 'Black';
+    
+    document.getElementById('checkmateText').textContent = `Checkmate by ${pieceName}`;
+    document.getElementById('checkmateDetail').textContent = `ANONYMOUS wins in ${moveCount} moves`;
+    banner.classList.add('active');
+  } else {
+    banner.classList.remove('active');
+  }
 }
 
 function goTo(pos) {
@@ -909,6 +1037,14 @@ function stopAuto() {
   autoInterval = null;
   document.getElementById('autoBtn').classList.remove('active');
   document.getElementById('autoBtn').innerHTML = '&#9654; Auto';
+}
+
+function prevGame() {
+  if (currentGameIdx > 0) loadGame(currentGameIdx - 1);
+}
+
+function nextGame() {
+  if (currentGameIdx < GAMES.length - 1) loadGame(currentGameIdx + 1);
 }
 
 // Keyboard controls
